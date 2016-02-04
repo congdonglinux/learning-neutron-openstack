@@ -86,3 +86,30 @@ các lệnh có thể sử dụng ở đây như ip, route, iptables, telnet ho�
 
 ở đây ta sử dụng ML2 plugin để mở rộng khả năng sử dụng các công nghệ khác nhau, chi tiết phần khai báo cấu hình các công nghệ được cấu hình trong file /etc/neutron/plugins/ml2/ml2_config.ini
 
+####DHCP và tiến trình Dnsmasq
+Khi DHCP được enable, tiến trình dnsmasq được khởi chạy bên trong mỗi dhcp namespace, có nhiệm vụ đóng vai trò như 1 dhcp server cấp ip động cho các VM trong 1 tenant. 
+Mỗi dhcp namespace được gán 1 port tap và nối tới br-int trên node network. Show dhcp namespace port bằng câu lệnh:
+
+    ip netns exec {dhcp-namespace-ID} ip a
+ta sẽ thấy port tap đó.
+
+####Quy ước đặt tên port trong openstack:
+**Trên compute node**
+
+- Linux bridge: qbr-ID
+Linux bridge nằm giữa VM và br-int, gồm 2 port:
+ - port tap gắn với VM: tap-ID
+ - port veth pair gắn với br-int: qvb-ID
+- Br-int :
+ - port veth pair gắn với linux bridge: qvo-ID
+ - port patch gắn với br-tun
+ 
+Trên 1 network thì các port của các thiết bị này có chung ID là ID của network đó.
+
+**Trên network node**
+
+- Br-int: cung cấp router ảo và DHCP cho instance. gồm các port:
+ - port tap gắn với DHCP namespace: tap-ID
+ - port qr gắn với router namespace: qr-ID
+ 
+- Br-ex: cung cấp external connection. Gồm port qg gắn với router namespace: qg-ID
